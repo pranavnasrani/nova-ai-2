@@ -40,6 +40,8 @@ const BalanceCard = () => {
         }
     }, [currentUser]);
 
+    const totalBalance = balances.savings + balances.loans;
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -49,7 +51,7 @@ const BalanceCard = () => {
         >
             <div className="bg-slate-800 p-6 rounded-3xl shadow-lg text-white">
                 <p className="text-slate-400">{t('totalBalance')}</p>
-                <p className="text-4xl font-bold mt-1">{formatCurrency(balances.savings)}</p>
+                <p className="text-4xl font-bold mt-1">{formatCurrency(totalBalance)}</p>
                 <div className="mt-6 grid grid-cols-2 gap-4">
                     <BalanceBreakdownItem icon={<BankIcon className="w-5 h-5 text-green-300"/>} label={t('savings')} value={balances.savings} colorClass="bg-green-500/10" />
                     <BalanceBreakdownItem icon={<ArrowTrendingUpIcon className="w-5 h-5 text-blue-300"/>} label={t('investments')} value={balances.investments} colorClass="bg-blue-500/10" />

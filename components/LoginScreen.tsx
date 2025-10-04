@@ -1,31 +1,39 @@
 
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+// FIX: Imported the `Variants` type from framer-motion to explicitly type the animation variants, resolving a TypeScript error where the `type` property was being inferred as a generic `string` instead of a specific animation type.
+import { motion, Variants } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
-import { UserIcon, LockIcon, ChevronLeftIcon } from './icons';
+import { ChevronLeftIcon } from './icons';
+
+const formVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1, 
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 } 
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { type: 'spring', stiffness: 100, damping: 15 }
+  },
+};
+
+const InputField = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+    <input 
+      {...props}
+      className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-5 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
+    />
+);
 
 interface LoginScreenProps {
   onLogin: (username: string, pin: string) => boolean;
   onBack: () => void;
 }
-
-const InputField = ({ icon, ...props }: { icon: React.ReactNode } & React.InputHTMLAttributes<HTMLInputElement>) => (
-  <motion.div
-    className="relative"
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-  >
-    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400">
-      {icon}
-    </div>
-    <input 
-      {...props}
-      className="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-    />
-  </motion.div>
-);
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onBack }) => {
   const { t } = useTranslation();
@@ -41,46 +49,55 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onBack }) => 
     }
   };
 
-  const formVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.1, duration: 0.5 } },
-    exit: { opacity: 0, y: -50 },
-  };
-
   return (
-    <div className="min-h-screen w-full text-white flex flex-col items-center justify-center p-4 login-gradient-bg">
-      <motion.div
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: 'easeOut' }}
-        className="w-full max-w-sm"
-      >
-        <button onClick={onBack} className="absolute top-16 left-6 text-slate-300 hover:text-white transition-colors">
-            <ChevronLeftIcon className="w-6 h-6" />
-        </button>
-        <div className="text-center mb-10">
-          <h1 className="text-5xl font-extrabold text-white shadow-xl">
-            {t('appName')}
-          </h1>
-          <p className="text-slate-300 mt-3 text-lg">{t('appSubtitle')}</p>
-        </div>
-        
+    <div className="min-h-screen w-full animated-bubble-bg">
+      <div className="bubbles-wrapper" aria-hidden="true">
+        <div className="bubble b1"></div>
+        <div className="bubble b2"></div>
+        <div className="bubble b3"></div>
+        <div className="bubble b4"></div>
+      </div>
+      <div className="content-wrapper min-h-screen w-full text-white flex flex-col items-center justify-center p-4">
         <motion.div
-            variants={formVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="bg-slate-900/50 p-8 rounded-3xl shadow-2xl backdrop-blur-md overflow-hidden border border-slate-700/50"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: 'easeOut' }}
+          className="w-full max-w-sm"
         >
-          <form onSubmit={handleLogin} className="space-y-6">
-            <h2 className="text-2xl font-bold text-center mb-2 text-white">{t('welcomeBack')}</h2>
-            <InputField icon={<UserIcon />} type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t('usernamePlaceholderLogin')} />
-            <InputField icon={<LockIcon />} type="password" value={pin} onChange={(e) => setPin(e.target.value)} maxLength={4} placeholder="****" />
-            {error && <p className="text-red-400 text-sm text-center !mt-4">{error}</p>}
-            <motion.button whileHover={{scale: 1.05}} whileTap={{scale: 0.95}} type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition-all text-lg">{t('signIn')}</motion.button>
-          </form>
+          <button onClick={onBack} className="absolute top-16 left-6 text-slate-300 hover:text-white transition-colors">
+              <ChevronLeftIcon className="w-6 h-6" />
+          </button>
+          <div className="text-center mb-10">
+            <motion.img 
+              initial={{ opacity: 0, y: -20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+              src="https://i.ibb.co/Xfkv7fTz/a28b93d3-2776-44d7-bc81-8aa6bb8471fc.png" alt="Nova Bank Logo" className="h-20 w-auto mx-auto" 
+            />
+          </div>
+          
+          <motion.div
+              variants={formVariants}
+              initial="hidden"
+              animate="visible"
+              className="bg-slate-900/50 p-8 rounded-3xl shadow-2xl backdrop-blur-md overflow-hidden border border-slate-700/50"
+          >
+            <form onSubmit={handleLogin} className="space-y-6">
+              <motion.h2 variants={itemVariants} className="text-2xl font-bold text-center mb-2 text-white">{t('welcomeBack')}</motion.h2>
+              <motion.div variants={itemVariants}>
+                <InputField type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t('usernamePlaceholderLogin')} />
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                <InputField type="password" value={pin} onChange={(e) => setPin(e.target.value)} maxLength={4} placeholder="****" />
+              </motion.div>
+              {error && <p className="text-red-400 text-sm text-center !mt-4">{error}</p>}
+              <motion.div variants={itemVariants}>
+                <motion.button whileHover={{scale: 1.05}} whileTap={{scale: 0.95}} type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition-all text-lg">{t('signIn')}</motion.button>
+              </motion.div>
+            </form>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      </div>
     </div>
   );
 };

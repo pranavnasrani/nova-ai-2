@@ -54,42 +54,50 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onBa
   };
 
   return (
-    <div className="min-h-screen w-full text-white flex flex-col items-center justify-center p-4 login-gradient-bg">
-      <motion.div
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: 'easeOut' }}
-        className="w-full max-w-sm"
-      >
-        <button onClick={onBack} className="absolute top-16 left-6 text-slate-300 hover:text-white transition-colors">
-            <ChevronLeftIcon className="w-6 h-6" />
-        </button>
-        <div className="text-center mb-10">
-          <h1 className="text-5xl font-extrabold text-white shadow-xl">
-            {t('appName')}
-          </h1>
-          <p className="text-slate-300 mt-3 text-lg">{t('appSubtitle')}</p>
-        </div>
-        
+    <div className="min-h-screen w-full animated-bubble-bg">
+      <div className="bubbles-wrapper" aria-hidden="true">
+        <div className="bubble b1"></div>
+        <div className="bubble b2"></div>
+        <div className="bubble b3"></div>
+        <div className="bubble b4"></div>
+      </div>
+      <div className="content-wrapper min-h-screen w-full text-white flex flex-col items-center justify-center p-4">
         <motion.div
-          variants={formVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          className="bg-slate-900/50 p-8 rounded-3xl shadow-2xl backdrop-blur-md overflow-hidden border border-slate-700/50"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: 'easeOut' }}
+          className="w-full max-w-sm"
         >
-          <form onSubmit={handleRegister} className="space-y-5">
-            <h2 className="text-2xl font-bold text-center mb-2 text-white">{t('createAccount')}</h2>
-            <InputField icon={<UserIcon />} type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('fullNamePlaceholder')} />
-            <InputField icon={<UserIcon />} type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t('usernamePlaceholder')} />
-            <InputField icon={<MailIcon />} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('emailPlaceholder')} />
-            <InputField icon={<PhoneIcon />} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('phonePlaceholder')} />
-            <InputField icon={<LockIcon />} type="password" value={pin} onChange={(e) => setPin(e.target.value)} maxLength={4} placeholder="****" />
-            {error && <p className="text-red-400 text-sm text-center !mt-4">{error}</p>}
-            <motion.button whileHover={{scale: 1.05}} whileTap={{scale: 0.95}} type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition-all text-lg">{t('getStarted')}</motion.button>
-          </form>
+          <button onClick={onBack} className="absolute top-16 left-6 text-slate-300 hover:text-white transition-colors">
+              <ChevronLeftIcon className="w-6 h-6" />
+          </button>
+          <div className="text-center mb-10">
+            <h1 className="text-5xl font-extrabold text-white shadow-xl">
+              {t('appName')}
+            </h1>
+            <p className="text-slate-300 mt-3 text-lg">{t('appSubtitle')}</p>
+          </div>
+          
+          <motion.div
+            variants={formVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="bg-slate-900/50 p-8 rounded-3xl shadow-2xl backdrop-blur-md overflow-hidden border border-slate-700/50"
+          >
+            <form onSubmit={handleRegister} className="space-y-5">
+              <h2 className="text-2xl font-bold text-center mb-2 text-white">{t('createAccount')}</h2>
+              <InputField icon={<UserIcon />} type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('fullNamePlaceholder')} />
+              <InputField icon={<UserIcon />} type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t('usernamePlaceholder')} />
+              <InputField icon={<MailIcon />} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('emailPlaceholder')} />
+              <InputField icon={<PhoneIcon />} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('phonePlaceholder')} />
+              <InputField icon={<LockIcon />} type="password" value={pin} onChange={(e) => setPin(e.target.value)} maxLength={4} placeholder="****" />
+              {error && <p className="text-red-400 text-sm text-center !mt-4">{error}</p>}
+              <motion.button whileHover={{scale: 1.05}} whileTap={{scale: 0.95}} type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition-all text-lg">{t('getStarted')}</motion.button>
+            </form>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      </div>
     </div>
   );
 };
