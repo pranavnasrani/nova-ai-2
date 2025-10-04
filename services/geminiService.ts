@@ -107,6 +107,27 @@ const requestPaymentExtensionFunctionDeclaration: FunctionDeclaration = {
     },
 };
 
+const getAccountTransactionsFunctionDeclaration: FunctionDeclaration = {
+    name: 'getAccountTransactions',
+    description: "Fetches the recent transaction history for the user's main savings account.",
+    parameters: {
+        type: Type.OBJECT,
+        properties: {
+            limit: { type: Type.NUMBER, description: "The number of recent transactions to return. Defaults to 5." },
+        },
+        required: [],
+    },
+};
+
+const getAccountBalanceFunctionDeclaration: FunctionDeclaration = {
+    name: 'getAccountBalance',
+    description: "Retrieves the user's current account balances, including savings, total credit card debt, and total loan debt.",
+    parameters: {
+        type: Type.OBJECT,
+        properties: {},
+        required: [],
+    },
+};
 
 const applyForCreditCardFunctionDeclaration: FunctionDeclaration = {
     name: 'applyForCreditCard',
@@ -208,9 +229,10 @@ Your capabilities include initiating payments, providing card information, analy
     - This tool uses AI to provide a categorical breakdown of their spending from all their accounts for a given period.
 
 3.  **Card & Account Information**:
-    - If the user asks about their "bill," "statement," "due date," or "minimum payment," you MUST use the 'getCardStatementDetails' tool.
-    - If the user asks for their "recent transactions," "spending history," or similar on a card, you MUST use the 'getCardTransactions' tool.
-    - ${cardDescriptions} If a card is not specified, assume they mean their primary (first) card if they have one.
+    - If the user asks for their "balance," "how much money do I have," or similar, you MUST use the 'getAccountBalance' tool. This provides a full financial overview (savings, card debt, loans).
+    - If the user asks about their credit card "bill," "statement," "due date," or "minimum payment," you MUST use the 'getCardStatementDetails' tool.
+    - To get recent transactions for a credit card, use 'getCardTransactions'. To get transactions for the main savings account, use 'getAccountTransactions'. If the user just asks for "recent transactions" without specifying, use 'getAccountTransactions'.
+    - ${cardDescriptions} If a card is not specified for a card-related query, assume they mean their primary (first) card if they have one.
 
 4.  **Bill & Loan Payments**:
     - If the user wants to "pay my bill," "make a payment," or similar for a card or loan, you MUST use the 'makeAccountPayment' tool.
@@ -246,7 +268,9 @@ Your capabilities include initiating payments, providing card information, analy
         requestPaymentExtensionFunctionDeclaration,
         applyForCreditCardFunctionDeclaration,
         applyForLoanFunctionDeclaration,
-        getSpendingAnalysisFunctionDeclaration
+        getSpendingAnalysisFunctionDeclaration,
+        getAccountTransactionsFunctionDeclaration,
+        getAccountBalanceFunctionDeclaration
     ];
 
     // FIX: Updated to use the new `ai.chats.create` API with the recommended `gemini-2.5-flash` model and the correct configuration structure.

@@ -143,6 +143,33 @@ export const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose }) => {
                     resultMessage = "Card not found.";
                     resultForModel = { success: false, message: resultMessage };
                 }
+            } else if (call.name === 'getAccountBalance') {
+                const savingsBalance = currentUser.balance;
+                const totalCardBalance = currentUser.cards.reduce((sum, card) => sum + card.creditBalance, 0);
+                const totalLoanBalance = currentUser.loans.reduce((sum, loan) => sum + loan.remainingBalance, 0);
+
+                resultMessage = `Here's your balance summary:\n- Savings: ${formatCurrency(savingsBalance)}\n- Total Card Debt: ${formatCurrency(totalCardBalance)}\n- Total Loan Debt: ${formatCurrency(totalLoanBalance)}`;
+                resultForModel = { 
+                    success: true, 
+                    savingsBalance,
+                    totalCardBalance,
+                    totalLoanBalance,
+                };
+            } else if (call.name === 'getAccountTransactions') {
+                const limit = (call.args.limit as number) || 5;
+                const userTransactions = transactions
+                    .filter(tx => tx.userId === currentUser.id)
+                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                    .slice(0, limit);
+
+                if (userTransactions.length > 0) {
+                    const txSummary = userTransactions.map(tx => `- ${tx.type === 'credit' ? '+' : '-'}${formatCurrency(tx.amount)} for "${tx.description}" on ${formatDate(tx.timestamp)}`).join('\n');
+                    resultMessage = `Here are your last ${userTransactions.length} savings account transactions:\n${txSummary}`;
+                    resultForModel = { success: true, transactions: userTransactions };
+                } else {
+                    resultMessage = "You have no transactions in your savings account.";
+                    resultForModel = { success: true, transactions: [] };
+                }
             } else if (call.name === 'makeAccountPayment') {
                 const { accountId, accountType, paymentType, amount } = call.args;
                 const result = makeAccountPayment(accountId as string, accountType as 'card' | 'loan', paymentType as 'minimum' | 'statement' | 'full' | 'custom', amount as number | undefined);
