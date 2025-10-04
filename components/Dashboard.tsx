@@ -1,8 +1,9 @@
 
+
 import React, { useContext, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BankContext } from '../App';
-import { MessageSquareIcon, HomeIcon, CreditCardIcon, SettingsIcon, DollarSignIcon, PlusIcon } from './icons';
+import { MessageSquareIcon, HomeIcon, CreditCardIcon, SettingsIcon, DollarSignIcon, PlusIcon, LogoutIcon } from './icons';
 import { ChatModal } from './ChatModal';
 import { HomeScreen } from './HomeScreen';
 import { CardsScreen } from './CardsScreen';
@@ -21,7 +22,7 @@ const NavItem = ({ icon, label, isActive, onClick }: { icon: React.ReactNode, la
 );
 
 export const Dashboard = () => {
-    const { currentUser, transactions } = useContext(BankContext);
+    const { currentUser, transactions, logout } = useContext(BankContext);
     const { t, language } = useTranslation();
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
@@ -77,6 +78,9 @@ export const Dashboard = () => {
                         <h1 className="text-lg font-bold text-white">{useContext(BankContext).currentUser?.name}</h1>
                     </div>
                 </div>
+                <button onClick={logout} className="p-2 rounded-full text-slate-400 hover:bg-red-500/20 hover:text-red-400 transition-colors" aria-label={t('signOut')}>
+                    <LogoutIcon className="w-6 h-6" />
+                </button>
             </header>
 
             <main className="flex-grow flex flex-col overflow-y-auto pb-24">
