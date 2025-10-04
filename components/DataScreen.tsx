@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
@@ -71,11 +70,15 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onBa
           <button onClick={onBack} className="absolute top-16 left-6 text-slate-300 hover:text-white transition-colors">
               <ChevronLeftIcon className="w-6 h-6" />
           </button>
-          <div className="text-center mb-10">
-            <h1 className="text-5xl font-extrabold text-white shadow-xl">
-              {t('appName')}
-            </h1>
-            <p className="text-slate-300 mt-3 text-lg">{t('appSubtitle')}</p>
+          <div className="text-center mb-8">
+            <motion.img 
+              initial={{ opacity: 0, y: -20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+              src="https://i.ibb.co/Xfkv7fTz/a28b93d3-2776-44d7-bc81-8aa6bb8471fc.png" 
+              alt="Nova Bank Logo" 
+              className="h-48 w-auto mx-auto" 
+            />
           </div>
           
           <motion.div

@@ -115,9 +115,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigateToLogin,
             <LanguageSelector />
         </header>
 
-        <main className="w-full max-w-md flex flex-col justify-center items-center flex-grow">
-            <img src="https://i.ibb.co/Xfkv7fTz/a28b93d3-2776-44d7-bc81-8aa6bb8471fc.png" alt="Nova Bank Logo" className="h-52 w-auto mb-2" />
-            <div className="relative w-full aspect-[4/5] rounded-3xl mb-4 overflow-hidden shadow-2xl bg-slate-900">
+        <main className="w-full max-w-md flex flex-col justify-center items-center flex-grow pb-4">
+            <img src="https://i.ibb.co/Xfkv7fTz/a28b93d3-2776-44d7-bc81-8aa6bb8471fc.png" alt="Nova Bank Logo" className="h-48 w-auto" />
+            <div className="relative w-full aspect-[4/5] rounded-3xl -mt-8 mb-4 overflow-hidden shadow-2xl bg-slate-900">
             <AnimatePresence initial={false} custom={direction}>
                     <motion.img
                         key={page}
@@ -141,7 +141,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigateToLogin,
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-                className="text-center"
+                className="text-center py-4"
             >
             <h1 className="text-3xl font-semibold tracking-tight">{t(slide.titleKey as any)}</h1>
             </motion.div>

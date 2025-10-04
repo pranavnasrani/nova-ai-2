@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 // FIX: Imported the `Variants` type from framer-motion to explicitly type the animation variants, resolving a TypeScript error where the `type` property was being inferred as a generic `string` instead of a specific animation type.
 import { motion, Variants } from 'framer-motion';
@@ -67,12 +66,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onBack }) => 
           <button onClick={onBack} className="absolute top-16 left-6 text-slate-300 hover:text-white transition-colors">
               <ChevronLeftIcon className="w-6 h-6" />
           </button>
-          <div className="text-center mb-10">
+          <div className="text-center mb-8">
             <motion.img 
               initial={{ opacity: 0, y: -20 }} 
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.7, ease: 'easeOut' }}
-              src="https://i.ibb.co/Xfkv7fTz/a28b93d3-2776-44d7-bc81-8aa6bb8471fc.png" alt="Nova Bank Logo" className="h-20 w-auto mx-auto" 
+              src="https://i.ibb.co/Xfkv7fTz/a28b93d3-2776-44d7-bc81-8aa6bb8471fc.png" alt="Nova Bank Logo" className="h-48 w-auto mx-auto" 
             />
           </div>
           
