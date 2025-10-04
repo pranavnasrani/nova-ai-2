@@ -116,8 +116,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigateToLogin,
         </header>
 
         <main className="w-full max-w-md flex flex-col justify-center items-center flex-grow pb-4">
-            <img src="https://i.ibb.co/Xfkv7fTz/a28b93d3-2776-44d7-bc81-8aa6bb8471fc.png" alt="Nova Bank Logo" className="h-48 w-auto" />
-            <div className="relative w-full aspect-[4/5] rounded-3xl -mt-8 mb-4 overflow-hidden shadow-2xl bg-slate-900">
+            <img src="https://i.ibb.co/PGQV6Z6W/4a5ed823-ab85-47ea-ac90-818fe3ed761f.png" alt="Nova Bank Logo" className="h-12 w-37" />
+            <div className="relative w-full aspect-[4/5] rounded-3xl mt-4 mb-4 overflow-hidden shadow-2xl bg-slate-900">
             <AnimatePresence initial={false} custom={direction}>
                     <motion.img
                         key={page}

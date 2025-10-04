@@ -75,9 +75,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onBa
               initial={{ opacity: 0, y: -20 }} 
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.7, ease: 'easeOut' }}
-              src="https://i.ibb.co/Xfkv7fTz/a28b93d3-2776-44d7-bc81-8aa6bb8471fc.png" 
+              src="https://i.ibb.co/PGQV6Z6W/4a5ed823-ab85-47ea-ac90-818fe3ed761f.png" 
               alt="Nova Bank Logo" 
-              className="h-48 w-auto mx-auto" 
+              className="h-12 w-40 mx-auto" 
             />
           </div>
           
