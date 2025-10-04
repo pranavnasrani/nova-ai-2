@@ -1,11 +1,10 @@
-
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createChatSession, extractPaymentDetailsFromImage, analyzeSpendingWithAI } from '../services/geminiService';
 import { BankContext, CardApplicationDetails, LoanApplicationDetails } from '../App';
 import { SparklesIcon, MicrophoneIcon, SendIcon, CameraIcon } from './icons';
 import { Chat } from '@google/genai';
-import { Transaction } from '../types';
+import { Transaction, Card, Loan } from '../types';
 import { useTranslation } from '../hooks/useTranslation';
 
 interface ChatModalProps {
@@ -41,7 +40,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 };
 
 export const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, transferMoney, users, addCardToUser, addLoanToUser, requestPaymentExtension, transactions } = useContext(BankContext);
+  const { currentUser, transferMoney, users, addCardToUser, addLoanToUser, requestPaymentExtension, makeAccountPayment, transactions } = useContext(BankContext);
   const { t, language } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -63,7 +62,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose }) => {
     if (isOpen && currentUser) {
         setMessages([{ id: messageId.current++, sender: 'ai', text: t('chatGreeting', { name: currentUser?.name.split(' ')[0] })}]);
         setInputValue('');
-        setChat(createChatSession(currentUser.name, contacts, language));
+        setChat(createChatSession(currentUser.name, contacts, language, currentUser.cards, currentUser.loans));
     } else {
         setChat(null);
         if (isListening) {
@@ -118,8 +117,8 @@ export const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose }) => {
             }
 
             if (call.name === 'initiatePayment') {
-                const { recipientName, recipientAccountNumber, amount } = call.args;
-                const recipientIdentifier = (recipientAccountNumber || recipientName) as string;
+                const { recipientName, recipientAccountNumber, recipientEmail, recipientPhone, amount } = call.args;
+                const recipientIdentifier = (recipientAccountNumber || recipientEmail || recipientPhone || recipientName) as string;
                 const result = transferMoney(recipientIdentifier, amount as number);
                 resultMessage = result.message;
                 resultForModel = result;
@@ -144,6 +143,11 @@ export const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose }) => {
                     resultMessage = "Card not found.";
                     resultForModel = { success: false, message: resultMessage };
                 }
+            } else if (call.name === 'makeAccountPayment') {
+                const { accountId, accountType, paymentType, amount } = call.args;
+                const result = makeAccountPayment(accountId as string, accountType as 'card' | 'loan', paymentType as 'minimum' | 'statement' | 'full' | 'custom', amount as number | undefined);
+                resultMessage = result.message;
+                resultForModel = result;
             } else if (call.name === 'requestPaymentExtension') {
                 const { accountId, accountType } = call.args;
                 const result = requestPaymentExtension(accountId as string, accountType as 'card' | 'loan');

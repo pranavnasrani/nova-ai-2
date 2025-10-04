@@ -32,11 +32,13 @@ export interface User {
   username: string;
   pin: string; // 4-digit PIN for simplicity
   balance: number;
-  savingsAccountNumber: string;
+  savingsAccountNumber: string; // 16-digit account number
   investmentAccountNumber?: string;
   avatarUrl: string;
   cards: Card[];
   loans: Loan[];
+  email: string;
+  phone: string;
 }
 
 export interface Transaction {

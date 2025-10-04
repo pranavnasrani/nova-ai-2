@@ -1,4 +1,5 @@
 
+
 import React, { useState, createContext, useEffect } from 'react';
 import { MOCK_USERS, MOCK_TRANSACTIONS, generateMockCard, generateMockLoan, generateAccountNumber } from './constants';
 import { User, Transaction, Card, Loan } from './types';
@@ -48,11 +49,12 @@ interface BankContextType {
     transactions: Transaction[];
     login: (username: string, pin: string) => boolean;
     logout: () => void;
-    registerUser: (name: string, username: string, pin: string) => boolean;
+    registerUser: (name: string, username: string, pin: string, email: string, phone: string) => boolean;
     transferMoney: (recipientIdentifier: string, amount: number) => { success: boolean; message: string };
     addCardToUser: (details: CardApplicationDetails) => { success: boolean; message: string; newCard?: Card };
     addLoanToUser: (details: LoanApplicationDetails) => { success: boolean; message: string; newLoan?: Loan };
     requestPaymentExtension: (accountId: string, type: 'card' | 'loan') => { success: boolean; message: string; newDueDate?: string };
+    makeAccountPayment: (accountId: string, accountType: 'card' | 'loan', paymentType: 'minimum' | 'statement' | 'full' | 'custom', customAmount?: number) => { success: boolean; message: string };
     showToast: (message: string, type: 'success' | 'error') => void;
 }
 
@@ -79,6 +81,8 @@ const initialTransactions = (): Transaction[] => {
 };
 
 type AuthScreen = 'welcome' | 'login' | 'register';
+
+const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
 export default function App() {
     const [users, setUsers] = useState<User[]>(initialUsers);
@@ -118,7 +122,7 @@ export default function App() {
         setAuthScreen('welcome');
     };
 
-    const registerUser = (name: string, username: string, pin: string): boolean => {
+    const registerUser = (name: string, username: string, pin: string, email: string, phone: string): boolean => {
         const existingUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
         if (existingUser) {
             return false; // Username taken
@@ -129,6 +133,8 @@ export default function App() {
             name,
             username,
             pin,
+            email,
+            phone,
             balance: 1000, // Starting balance
             savingsAccountNumber: generateAccountNumber(),
             avatarUrl: `https://picsum.photos/seed/${username}/100`,
@@ -151,7 +157,9 @@ export default function App() {
         const recipientIndex = users.findIndex(u =>
             u.name.toLowerCase() === recipientIdentifier.toLowerCase() ||
             u.name.split(' ')[0].toLowerCase() === recipientIdentifier.toLowerCase() ||
-            u.savingsAccountNumber === recipientIdentifier
+            u.savingsAccountNumber === recipientIdentifier ||
+            u.email.toLowerCase() === recipientIdentifier.toLowerCase() ||
+            u.phone.replace(/[^0-9]/g, '') === recipientIdentifier.replace(/[^0-9]/g, '')
         );
 
         if (recipientIndex === -1) return { success: false, message: `Error: Contact or account "${recipientIdentifier}" not found.` };
@@ -320,7 +328,99 @@ export default function App() {
         return { success: true, message: `${message} ${formattedDate}.`, newDueDate: newDueDate.toISOString() };
     };
 
-    const contextValue = { currentUser, users, transactions, login, logout, registerUser, transferMoney, addCardToUser, addLoanToUser, requestPaymentExtension, showToast };
+    const makeAccountPayment = (accountId: string, accountType: 'card' | 'loan', paymentType: 'minimum' | 'statement' | 'full' | 'custom', customAmount?: number): { success: boolean; message: string } => {
+        if (!currentUser) return { success: false, message: 'Error: You are not logged in.' };
+
+        const userIndex = users.findIndex(u => u.id === currentUser.id);
+        const bankIndex = users.findIndex(u => u.id === 0); // Nova Bank user
+
+        if (userIndex === -1 || bankIndex === -1) return { success: false, message: 'Error: User or bank account not found.' };
+
+        let paymentAmount = 0;
+        let message = '';
+        const updatedUser = { ...users[userIndex] };
+        const updatedUsers = [...users];
+
+        if (accountType === 'card') {
+            const cardIndex = updatedUser.cards.findIndex(c => c.cardNumber.slice(-4) === accountId);
+            if (cardIndex === -1) return { success: false, message: `Error: Card ending in ${accountId} not found.`};
+            const card = updatedUser.cards[cardIndex];
+
+            switch(paymentType) {
+                case 'minimum': paymentAmount = card.minimumPayment; break;
+                case 'statement': paymentAmount = card.statementBalance; break;
+                case 'full': paymentAmount = card.creditBalance; break;
+                case 'custom':
+                    if (!customAmount || customAmount <= 0) return { success: false, message: 'Error: A valid custom amount is required.' };
+                    paymentAmount = customAmount;
+                    break;
+            }
+
+            if (updatedUser.balance < paymentAmount) return { success: false, message: `Error: Insufficient funds. Your balance is ${formatCurrency(updatedUser.balance)}.` };
+
+            updatedUser.balance -= paymentAmount;
+            updatedUser.cards[cardIndex].creditBalance -= paymentAmount;
+            if(updatedUser.cards[cardIndex].statementBalance > 0) {
+                updatedUser.cards[cardIndex].statementBalance = Math.max(0, updatedUser.cards[cardIndex].statementBalance - paymentAmount);
+            }
+            if(updatedUser.cards[cardIndex].creditBalance < 0) updatedUser.cards[cardIndex].creditBalance = 0;
+
+            message = `Successfully paid ${formatCurrency(paymentAmount)} towards your card ending in ${accountId}.`;
+
+        } else if (accountType === 'loan') {
+            const loanIndex = updatedUser.loans.findIndex(l => l.id === accountId);
+            if (loanIndex === -1) return { success: false, message: `Error: Loan with ID ${accountId} not found.`};
+            const loan = updatedUser.loans[loanIndex];
+
+            switch(paymentType) {
+                case 'minimum': paymentAmount = loan.monthlyPayment; break;
+                case 'full': paymentAmount = loan.remainingBalance; break;
+                case 'custom':
+                    if (!customAmount || customAmount <= 0) return { success: false, message: 'Error: A valid custom amount is required.' };
+                    paymentAmount = customAmount;
+                    break;
+                default:
+                    paymentAmount = loan.monthlyPayment; break;
+            }
+            
+            if (paymentAmount > loan.remainingBalance) paymentAmount = loan.remainingBalance;
+
+            if (updatedUser.balance < paymentAmount) return { success: false, message: `Error: Insufficient funds. Your balance is ${formatCurrency(updatedUser.balance)}.` };
+
+            updatedUser.balance -= paymentAmount;
+            updatedUser.loans[loanIndex].remainingBalance -= paymentAmount;
+            if(updatedUser.loans[loanIndex].remainingBalance <= 0) {
+                updatedUser.loans[loanIndex].status = 'Paid Off';
+                 message = `Successfully paid off your loan (${accountId}) with a final payment of ${formatCurrency(paymentAmount)}. Congratulations!`;
+            } else {
+                message = `Successfully paid ${formatCurrency(paymentAmount)} towards your loan (${accountId}).`;
+            }
+        } else {
+            return { success: false, message: 'Invalid account type.' };
+        }
+
+        updatedUsers[bankIndex] = { ...updatedUsers[bankIndex], balance: updatedUsers[bankIndex].balance + paymentAmount };
+        updatedUsers[userIndex] = updatedUser;
+        setUsers(updatedUsers);
+        setCurrentUser(updatedUser);
+
+        const newTransaction: Transaction = {
+            id: `t-payment-${Date.now()}`,
+            userId: currentUser.id,
+            type: 'debit',
+            amount: paymentAmount,
+            description: `Payment for ${accountType} ...${accountId.slice(-4)}`,
+            timestamp: new Date().toISOString(),
+            partyName: 'Nova Bank',
+            category: 'Bills',
+            cardId: accountType === 'card' ? currentUser.cards.find(c => c.cardNumber.slice(-4) === accountId)?.cardNumber : undefined
+        };
+        setTransactions(prev => [...prev, newTransaction]);
+
+        return { success: true, message };
+    };
+
+    const contextValue = { currentUser, users, transactions, login, logout, registerUser, transferMoney, addCardToUser, addLoanToUser, requestPaymentExtension, makeAccountPayment, showToast };
 
     const screenKey = currentUser ? 'dashboard' : authScreen;
     

@@ -1,5 +1,5 @@
 import { GoogleGenAI, FunctionDeclaration, Type, Chat, GenerateContentResponse } from '@google/genai';
-import { Transaction } from '../types';
+import { Transaction, Card, Loan } from '../types';
 
 // FIX: Added a fallback of an empty string to prevent a crash if the API key is not defined.
 const API_KEY = process.env.API_KEY || '';
@@ -19,11 +19,19 @@ const initiatePaymentFunctionDeclaration: FunctionDeclaration = {
         properties: {
             recipientName: {
                 type: Type.STRING,
-                description: "The full name or first name of the person to receive the money. This must be one of the available contacts. Use this OR recipientAccountNumber.",
+                description: "The full name or first name of the person to receive the money. Use this OR recipientAccountNumber OR recipientEmail OR recipientPhone.",
             },
             recipientAccountNumber: {
                 type: Type.STRING,
-                description: "The 10-digit account number of the recipient. Use this OR recipientName.",
+                description: "The 16-digit account number of the recipient. Use this OR recipientName OR recipientEmail OR recipientPhone.",
+            },
+            recipientEmail: {
+                type: Type.STRING,
+                description: "The email address of the recipient. Use this OR recipientName OR recipientAccountNumber OR recipientPhone."
+            },
+            recipientPhone: {
+                type: Type.STRING,
+                description: "The phone number of the recipient. Use this OR recipientName OR recipientAccountNumber OR recipientEmail."
             },
             amount: {
                 type: Type.NUMBER,
@@ -56,6 +64,33 @@ const getCardTransactionsFunctionDeclaration: FunctionDeclaration = {
             limit: { type: Type.NUMBER, description: "The number of recent transactions to return. Defaults to 5." },
         },
         required: [],
+    },
+};
+
+const makeAccountPaymentFunctionDeclaration: FunctionDeclaration = {
+    name: 'makeAccountPayment',
+    description: "Makes a payment towards a user's credit card bill or loan from their main account.",
+    parameters: {
+        type: Type.OBJECT,
+        properties: {
+            accountId: {
+                type: Type.STRING,
+                description: "The last 4 digits of the card number or the full loan ID."
+            },
+            accountType: {
+                type: Type.STRING,
+                description: "The type of account to pay, either 'card' or 'loan'."
+            },
+            paymentType: {
+                type: Type.STRING,
+                description: "The type of payment to make: 'minimum' for the minimum due, 'statement' for the statement balance (cards only), 'full' for the total outstanding balance, or 'custom' for a specific amount."
+            },
+            amount: {
+                type: Type.NUMBER,
+                description: "The specific amount to pay. This is ONLY required if paymentType is 'custom'."
+            },
+        },
+        required: ['accountId', 'accountType', 'paymentType'],
     },
 };
 
@@ -135,7 +170,7 @@ const getSpendingAnalysisFunctionDeclaration: FunctionDeclaration = {
 };
 
 
-export const createChatSession = (userFullName: string, contacts: string[], language: 'en' | 'es' | 'th' | 'tl'): Chat => {
+export const createChatSession = (userFullName: string, contacts: string[], language: 'en' | 'es' | 'th' | 'tl', userCards: Card[], userLoans: Loan[]): Chat => {
     // FIX: Replaced the deprecated model `gemini-1.5-flash` with the recommended `gemini-pro`.
     const langNameMap = {
         en: 'English',
@@ -145,12 +180,27 @@ export const createChatSession = (userFullName: string, contacts: string[], lang
     };
     const langName = langNameMap[language];
 
+    const activeLoans = userLoans.filter(l => l.status === 'Active');
+
+    let loanInstructions = '';
+    if (activeLoans.length === 0) {
+        loanInstructions = "The user has no active loans. If they ask to pay a loan or request an extension, you must inform them they don't have one.";
+    } else if (activeLoans.length === 1) {
+        loanInstructions = `The user has one active loan. If they want to pay their loan or request an extension, assume it is this one and use its ID: '${activeLoans[0].id}'. You do not need to ask for the loan ID.`;
+    } else {
+        const loanDescriptions = activeLoans.map((l) => `a loan for $${l.loanAmount} (ID: '${l.id}')`).join('; ');
+        loanInstructions = `The user has multiple active loans: ${loanDescriptions}. If the user asks to pay a loan or request an extension, you MUST ask for clarification (e.g., "Which loan would you like to pay? The one for $${activeLoans[0].loanAmount} or..."). Once they specify, you must use the corresponding loan ID for the 'accountId'. Do NOT ask the user for the loan ID directly.`;
+    }
+
+    const cardDescriptions = userCards.length > 0 ? `The user has the following card(s): ${userCards.map(c => `${c.cardType} ending in ${c.cardNumber.slice(-4)}`).join(', ')}.` : "The user has no credit cards.";
+
+
     const systemInstruction = `You are a world-class banking assistant named Nova for a user named ${userFullName}.
 Your capabilities include initiating payments, providing card information, analyzing spending, processing applications, and handling payment extensions.
 
 1.  **Payments**:
     - If the user asks to "send", "pay", "transfer", or similar, you MUST use the 'initiatePayment' tool.
-    - You must have a recipient and an amount. The recipient can be identified by their name OR their account number. Prioritize using the account number if provided.
+    - You must have a recipient and an amount. The recipient can be identified by their name, 16-digit account number, email address, or phone number. Prioritize using the account number if provided.
     - Available contacts by name are: ${contacts.join(', ')}. If a name doesn't match, inform the user. Do not hallucinate contacts.
 
 2.  **Spending Analysis**:
@@ -160,23 +210,30 @@ Your capabilities include initiating payments, providing card information, analy
 3.  **Card & Account Information**:
     - If the user asks about their "bill," "statement," "due date," or "minimum payment," you MUST use the 'getCardStatementDetails' tool.
     - If the user asks for their "recent transactions," "spending history," or similar on a card, you MUST use the 'getCardTransactions' tool.
-    - If a card is not specified, assume they mean their primary (first) card.
+    - ${cardDescriptions} If a card is not specified, assume they mean their primary (first) card if they have one.
 
-4.  **Payment Extensions**:
+4.  **Bill & Loan Payments**:
+    - If the user wants to "pay my bill," "make a payment," or similar for a card or loan, you MUST use the 'makeAccountPayment' tool.
+    - You must clarify the payment amount (e.g., minimum, statement, full, or custom).
+    - For card payments, you must provide the last 4 digits of the card number as the \`accountId\`.
+    - ${loanInstructions}
+
+5.  **Payment Extensions**:
     - If the user says they "can't pay," "need more time," or asks for an "extension" on a bill or loan, you MUST use the 'requestPaymentExtension' tool.
-    - You must ask for which account (card or loan) they need an extension on and get the last 4 digits of the card or the loan ID before calling the tool.
+    - For card extensions, you must provide the last 4 digits of the card number as the \`accountId\`.
+    - For loan extensions, follow the same logic as for loan payments above to determine the correct account ID.
 
-5.  **Credit Card Application**:
+6.  **Credit Card Application**:
     - If the user expresses intent to "apply for a credit card," you MUST use the 'applyForCreditCard' tool.
     - Before calling the tool, you MUST collect all required information: address, date of birth, employment status, employer, and annual income. You already know the user's name is ${userFullName}, so do not ask for it.
     - Ask for any missing information conversationally.
 
-6.  **Loan Application**:
+7.  **Loan Application**:
     - If the user wants to "apply for a loan," you MUST use the 'applyForLoan' tool.
     - Before calling the tool, collect the desired loan amount and the other personal/financial details: address, date of birth, employment status, and annual income. You already know the user's name is ${userFullName}, so do not ask for it.
     - Ask for missing information conversationally.
 
-7.  **General Conversation**:
+8.  **General Conversation**:
     - For any other queries, provide polite, brief, and helpful responses.
     - Always maintain a friendly and professional tone.
     - VERY IMPORTANT: You MUST respond exclusively in ${langName}. Do not switch languages.`;
@@ -185,6 +242,7 @@ Your capabilities include initiating payments, providing card information, analy
         initiatePaymentFunctionDeclaration,
         getCardStatementDetailsFunctionDeclaration,
         getCardTransactionsFunctionDeclaration,
+        makeAccountPaymentFunctionDeclaration,
         requestPaymentExtensionFunctionDeclaration,
         applyForCreditCardFunctionDeclaration,
         applyForLoanFunctionDeclaration,

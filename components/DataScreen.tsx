@@ -1,11 +1,12 @@
 
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
-import { UserIcon, LockIcon, ChevronLeftIcon } from './icons';
+import { UserIcon, LockIcon, ChevronLeftIcon, MailIcon, PhoneIcon } from './icons';
 
 interface RegisterScreenProps {
-  onRegister: (name: string, username: string, pin: string) => boolean;
+  onRegister: (name: string, username: string, pin: string, email: string, phone: string) => boolean;
   onBack: () => void;
 }
 
@@ -31,15 +32,17 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onBa
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !username || pin.length !== 4) {
+    if (!name || !username || pin.length !== 4 || !email || !phone) {
         setError(t('registerError'));
         return;
     }
-    if (!onRegister(name, username, pin)) {
+    if (!onRegister(name, username, pin, email, phone)) {
       setError(t('registerErrorUsernameTaken'));
     }
   };
@@ -58,7 +61,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onBa
         transition={{ duration: 0.7, ease: 'easeOut' }}
         className="w-full max-w-sm"
       >
-        <button onClick={onBack} className="absolute top-6 left-6 text-slate-300 hover:text-white transition-colors">
+        <button onClick={onBack} className="absolute top-16 left-6 text-slate-300 hover:text-white transition-colors">
             <ChevronLeftIcon className="w-6 h-6" />
         </button>
         <div className="text-center mb-10">
@@ -79,6 +82,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onBa
             <h2 className="text-2xl font-bold text-center mb-2 text-white">{t('createAccount')}</h2>
             <InputField icon={<UserIcon />} type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('fullNamePlaceholder')} />
             <InputField icon={<UserIcon />} type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t('usernamePlaceholder')} />
+            <InputField icon={<MailIcon />} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('emailPlaceholder')} />
+            <InputField icon={<PhoneIcon />} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('phonePlaceholder')} />
             <InputField icon={<LockIcon />} type="password" value={pin} onChange={(e) => setPin(e.target.value)} maxLength={4} placeholder="****" />
             {error && <p className="text-red-400 text-sm text-center !mt-4">{error}</p>}
             <motion.button whileHover={{scale: 1.05}} whileTap={{scale: 0.95}} type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition-all text-lg">{t('getStarted')}</motion.button>

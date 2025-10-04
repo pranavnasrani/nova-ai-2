@@ -92,7 +92,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigateToLogin,
 
   return (
     <div className="min-h-screen w-full text-white flex flex-col items-center justify-between p-6 login-gradient-bg overflow-hidden relative">
-      <div className="absolute top-12 right-6 z-20">
+      <div className="absolute top-16 right-6 z-20">
           <LanguageSelector />
       </div>
 

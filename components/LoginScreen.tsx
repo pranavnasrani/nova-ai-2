@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '../hooks/useTranslation';
@@ -54,7 +55,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onBack }) => 
         transition={{ duration: 0.7, ease: 'easeOut' }}
         className="w-full max-w-sm"
       >
-        <button onClick={onBack} className="absolute top-6 left-6 text-slate-300 hover:text-white transition-colors">
+        <button onClick={onBack} className="absolute top-16 left-6 text-slate-300 hover:text-white transition-colors">
             <ChevronLeftIcon className="w-6 h-6" />
         </button>
         <div className="text-center mb-10">
