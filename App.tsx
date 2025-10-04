@@ -7,6 +7,26 @@ import { Dashboard } from './components/Dashboard';
 import { AnimatePresence, motion } from 'framer-motion';
 import { WelcomeScreen } from './components/OnboardingScreen'; // Repurposed as WelcomeScreen
 import { RegisterScreen } from './components/DataScreen'; // Repurposed as RegisterScreen
+import { CheckCircleIcon, XCircleIcon } from './components/icons';
+
+
+const ToastNotification = ({ message, type }: { message: string, type: 'success' | 'error' }) => {
+    const isSuccess = type === 'success';
+    const Icon = isSuccess ? CheckCircleIcon : XCircleIcon;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+            className={`fixed top-12 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 p-4 rounded-2xl shadow-lg text-white ${isSuccess ? 'bg-green-600' : 'bg-red-600'} max-w-sm w-full`}
+        >
+            <Icon className="w-6 h-6 flex-shrink-0" />
+            <p className="font-semibold text-sm">{message}</p>
+        </motion.div>
+    );
+};
 
 export interface CardApplicationDetails {
     fullName: string;
@@ -33,6 +53,7 @@ interface BankContextType {
     addCardToUser: (details: CardApplicationDetails) => { success: boolean; message: string; newCard?: Card };
     addLoanToUser: (details: LoanApplicationDetails) => { success: boolean; message: string; newLoan?: Loan };
     requestPaymentExtension: (accountId: string, type: 'card' | 'loan') => { success: boolean; message: string; newDueDate?: string };
+    showToast: (message: string, type: 'success' | 'error') => void;
 }
 
 export const BankContext = createContext<BankContextType>(null!);
@@ -64,6 +85,8 @@ export default function App() {
     const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [authScreen, setAuthScreen] = useState<AuthScreen>('welcome');
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
 
     useEffect(() => {
         localStorage.setItem('gemini-bank-users', JSON.stringify(users));
@@ -72,6 +95,13 @@ export default function App() {
     useEffect(() => {
         localStorage.setItem('gemini-bank-transactions', JSON.stringify(transactions));
     }, [transactions]);
+    
+    const showToast = (message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => {
+            setToast(null);
+        }, 4000); // 4 seconds
+    };
 
 
     const login = (username: string, pin: string): boolean => {
@@ -188,7 +218,7 @@ export default function App() {
         setUsers(newUsers);
         setCurrentUser(updatedUser);
 
-        return { success: true, message: `Congratulations, ${details.fullName}! Your new ${newCard.cardType} card has been approved.`, newCard };
+        return { success: true, message: `Congratulations, ${details.fullName}! Your new ${newCard.cardType} card has been approved.` };
     };
 
     const addLoanToUser = (details: LoanApplicationDetails): { success: boolean; message: string; newLoan?: Loan } => {
@@ -290,7 +320,7 @@ export default function App() {
         return { success: true, message: `${message} ${formattedDate}.`, newDueDate: newDueDate.toISOString() };
     };
 
-    const contextValue = { currentUser, users, transactions, login, logout, registerUser, transferMoney, addCardToUser, addLoanToUser, requestPaymentExtension };
+    const contextValue = { currentUser, users, transactions, login, logout, registerUser, transferMoney, addCardToUser, addLoanToUser, requestPaymentExtension, showToast };
 
     const screenKey = currentUser ? 'dashboard' : authScreen;
     
@@ -308,6 +338,9 @@ export default function App() {
 
     return (
         <BankContext.Provider value={contextValue}>
+            <AnimatePresence>
+                {toast && <ToastNotification message={toast.message} type={toast.type} />}
+            </AnimatePresence>
             <AnimatePresence mode="wait">
                 <motion.div
                     key={screenKey}

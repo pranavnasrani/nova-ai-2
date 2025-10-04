@@ -83,14 +83,13 @@ const applyForCreditCardFunctionDeclaration: FunctionDeclaration = {
                 type: Type.OBJECT,
                 description: "Object containing all user-provided application details.",
                 properties: {
-                    fullName: { type: Type.STRING, description: "The user's full legal name." },
                     address: { type: Type.STRING, description: "The user's full residential address." },
                     dateOfBirth: { type: Type.STRING, description: "The user's date of birth (e.g., YYYY-MM-DD)." },
                     employmentStatus: { type: Type.STRING, description: "e.g., Employed, Self-Employed, Unemployed." },
                     employer: { type: Type.STRING, description: "Name of the user's employer. Can be 'N/A'." },
                     annualIncome: { type: Type.NUMBER, description: "The user's total annual income." },
                 },
-                required: ['fullName', 'address', 'dateOfBirth', 'employmentStatus', 'employer', 'annualIncome']
+                required: ['address', 'dateOfBirth', 'employmentStatus', 'employer', 'annualIncome']
             }
         },
         required: ['applicationDetails'],
@@ -108,14 +107,12 @@ const applyForLoanFunctionDeclaration: FunctionDeclaration = {
                 description: "Object containing all user-provided loan application details.",
                 properties: {
                     loanAmount: { type: Type.NUMBER, description: "The amount of money the user wants to borrow." },
-                    // Re-use personal details for simplicity. The AI should collect these as well.
-                    fullName: { type: Type.STRING, description: "The user's full legal name." },
                     address: { type: Type.STRING, description: "The user's full residential address." },
                     dateOfBirth: { type: Type.STRING, description: "The user's date of birth (e.g., YYYY-MM-DD)." },
                     employmentStatus: { type: Type.STRING, description: "e.g., Employed, Self-Employed, Unemployed." },
                     annualIncome: { type: Type.NUMBER, description: "The user's total annual income." },
                 },
-                required: ['loanAmount', 'fullName', 'address', 'dateOfBirth', 'employmentStatus', 'annualIncome']
+                required: ['loanAmount', 'address', 'dateOfBirth', 'employmentStatus', 'annualIncome']
             }
         },
         required: ['applicationDetails'],
@@ -171,12 +168,12 @@ Your capabilities include initiating payments, providing card information, analy
 
 5.  **Credit Card Application**:
     - If the user expresses intent to "apply for a credit card," you MUST use the 'applyForCreditCard' tool.
-    - Before calling the tool, you MUST collect all required information: full name, address, date of birth, employment status, employer, and annual income.
+    - Before calling the tool, you MUST collect all required information: address, date of birth, employment status, employer, and annual income. You already know the user's name is ${userFullName}, so do not ask for it.
     - Ask for any missing information conversationally.
 
 6.  **Loan Application**:
     - If the user wants to "apply for a loan," you MUST use the 'applyForLoan' tool.
-    - Before calling the tool, collect the desired loan amount and the same personal/financial details as a credit card application.
+    - Before calling the tool, collect the desired loan amount and the other personal/financial details: address, date of birth, employment status, and annual income. You already know the user's name is ${userFullName}, so do not ask for it.
     - Ask for missing information conversationally.
 
 7.  **General Conversation**:

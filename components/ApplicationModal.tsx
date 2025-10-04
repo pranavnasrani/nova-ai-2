@@ -1,7 +1,7 @@
+
 import React, { useState, useContext, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BankContext } from '../App';
-import { CheckCircleIcon, XCircleIcon } from './icons';
 import { useTranslation } from '../hooks/useTranslation';
 
 interface ApplicationModalProps {
@@ -10,10 +10,8 @@ interface ApplicationModalProps {
   applicationType: 'Card' | 'Loan';
 }
 
-type ApplicationStatus = 'pending' | 'submitting' | 'success' | 'rejected';
-
 export const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, applicationType }) => {
-  const { currentUser, addCardToUser, addLoanToUser } = useContext(BankContext);
+  const { currentUser, addCardToUser, addLoanToUser, showToast } = useContext(BankContext);
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     fullName: currentUser?.name || '',
@@ -25,8 +23,7 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onCl
     loanAmount: '10000',
     loanTerm: '36',
   });
-  const [status, setStatus] = useState<ApplicationStatus>('pending');
-  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -41,8 +38,7 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onCl
             loanAmount: '10000',
             loanTerm: '36',
         });
-        setStatus('pending');
-        setMessage('');
+        setIsSubmitting(false);
     }
   }, [isOpen, currentUser]);
 
@@ -53,7 +49,7 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onCl
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus('submitting');
+    setIsSubmitting(true);
 
     setTimeout(() => { // Simulate network delay
         const baseDetails = {
@@ -65,20 +61,20 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onCl
             annualIncome: parseFloat(formData.annualIncome) || 0,
         };
 
+        let result;
         if (applicationType === 'Card') {
-            const result = addCardToUser(baseDetails);
-            setMessage(result.message);
-            setStatus(result.success ? 'success' : 'rejected');
+            result = addCardToUser(baseDetails);
         } else {
             const loanDetails = {
                 ...baseDetails,
                 loanAmount: parseFloat(formData.loanAmount) || 0,
                 loanTerm: parseInt(formData.loanTerm, 10) || 0,
             };
-            const result = addLoanToUser(loanDetails);
-            setMessage(result.message);
-            setStatus(result.success ? 'success' : 'rejected');
+            result = addLoanToUser(loanDetails);
         }
+        
+        showToast(result.message, result.success ? 'success' : 'error');
+        onClose();
     }, 1500);
   };
 
@@ -121,28 +117,11 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onCl
             </div>
         </>
       )}
-      <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all" disabled={status === 'submitting'}>
-        {status === 'submitting' ? t('submitting') : t('submitApplication')}
+      <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all" disabled={isSubmitting}>
+        {isSubmitting ? t('submitting') : t('submitApplication')}
       </button>
     </form>
   );
-  
-  const renderResult = () => {
-      const isSuccess = status === 'success';
-      const Icon = isSuccess ? CheckCircleIcon : XCircleIcon;
-      const colorClass = isSuccess ? 'text-green-400' : 'text-red-400';
-
-      return (
-        <motion.div initial={{opacity: 0, scale: 0.8}} animate={{opacity: 1, scale: 1}} className="text-center flex flex-col items-center gap-4">
-            <Icon className={`w-20 h-20 ${colorClass}`} />
-            <h3 className={`text-xl font-bold ${colorClass}`}>{isSuccess ? t('approved') : t('applicationDenied')}</h3>
-            <p className="text-slate-300">{message}</p>
-            <button onClick={onClose} className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition-all mt-4">
-                {t('close')}
-            </button>
-        </motion.div>
-      );
-  }
 
   return (
     <AnimatePresence>
@@ -155,7 +134,7 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onCl
           <motion.div
             initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="bg-slate-800 w-full max-w-md rounded-3xl flex flex-col overflow-hidden"
+            className="bg-slate-800 w-full max-w-md rounded-3xl flex flex-col overflow-hidden max-h-[85vh]"
             onClick={(e) => e.stopPropagation()}
           >
             <header className="p-4 border-b border-slate-700 flex items-center justify-between flex-shrink-0">
@@ -163,18 +142,8 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onCl
               <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">&times;</button>
             </header>
             
-            <div className="p-6">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={status}
-                        initial={{ opacity: 0, x: 50 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -50 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        {status === 'pending' || status === 'submitting' ? renderForm() : renderResult()}
-                    </motion.div>
-                </AnimatePresence>
+            <div className="p-6 overflow-y-auto">
+                {renderForm()}
             </div>
           </motion.div>
         </motion.div>

@@ -150,11 +150,17 @@ export const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose }) => {
                 resultMessage = result.message;
                 resultForModel = result;
             } else if (call.name === 'applyForCreditCard') {
-                const result = addCardToUser(call.args.applicationDetails as CardApplicationDetails);
+                const applicationDetailsFromAI = call.args.applicationDetails as Omit<CardApplicationDetails, 'fullName'>;
+                const result = addCardToUser({ ...applicationDetailsFromAI, fullName: currentUser.name });
                 resultMessage = result.message;
                 resultForModel = result;
             } else if (call.name === 'applyForLoan') {
-                const loanDetails = { ...(call.args.applicationDetails as object), loanTerm: 36 } as LoanApplicationDetails
+                const applicationDetailsFromAI = call.args.applicationDetails as Omit<LoanApplicationDetails, 'fullName' | 'loanTerm'>;
+                const loanDetails = {
+                    ...applicationDetailsFromAI,
+                    fullName: currentUser.name,
+                    loanTerm: 36, // Retaining original hardcoded behavior
+                };
                 const result = addLoanToUser(loanDetails);
                 resultMessage = result.message;
                 resultForModel = result;
